@@ -1,0 +1,50 @@
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mongodb:
+    image: mongo:latest
+    container_name: gateway_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  ipfs-node:
+    image: ipfs/kubo:latest
+    container_name: ipfs_host
+    networks:
+      default:
+        aliases:
+          - ipfs-host
+    ports:
+      - "4001:4001" # Swarm (P2P)
+      - "5001:5001" # API RPC (pour que la gateway communique avec IPFS)
+      - "8080:8080" # Gateway HTTP
+    volumes:
+      - ipfs_staging:/export
+      - ipfs_data:/data/ipfs
+
+  gateway:
+    build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mqtt-broker
+      - mongodb
+      - ipfs-node
+    env_file: .env
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/iot_gateway
+      - IPFS_API_URL=http://ipfs-host:5001 # Utilisation de l'alias ipfs-host
+
+volumes:
+  mongo_data:
+  ipfs_data:
+  ipfs_staging:

@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  iot-simulator:
+    build: .
+    container_name: iot_device_sim
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file: .env
+    stdin_open: true
+    tty: true
+    # --- MODIFICATION ICI ---
+    networks:
+      - iot-network
+
+networks:
+  iot-network:
+    external: true
+    # Remplace 'iot-gateway_default' par le vrai nom du réseau
+    # créé par le compose de la Gateway.
+    name: gateway_default
